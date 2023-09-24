@@ -33,5 +33,31 @@ emerge --sync
 eselect profile set 5
 
 #Updating the @world set
-emerge --ask --verbose --update --deep --newuse @world
+emerge --update --deep --newuse @world
+
+#Configuring the Linux kernel
+emerge sys-kernel/linux-firmware
+emerge sys-kernel/gentoo-sources
+eselect kernel set 1
+emerge sys-kernel/genkernel
+genkernel all
+
+#Configuring the system
+echo tux > /etc/hostname
+
+emerge --ask app-admin/sysklogd
+rc-update add sysklogd default
+
+emerge --ask sys-process/cronie
+rc-update add cronie default
+
+emerge --ask sys-apps/mlocate
+
+emerge --ask net-misc/chrony
+rc-update add chronyd default
+
+emerge --ask net-misc/dhcpcd
+
+#Configuring the bootloader
+emerge sys-boot/grub
 
