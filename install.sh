@@ -1,14 +1,31 @@
 #!/bin/bash
 
-#Stage 3
+cryptsetup -v -y -c aes-xts-plain64 -s 512 -h sha512 -i 5000 --use-random luksFormat /dev/nvme0n1p2
+cryptsetup luksDump /dev/nvme0n1p2
+cryptsetup luksOpen /dev/nvme0n1p2 gentoo
+
+pvcreate /dev/mapper/gentoo
+vgcreate gentoo /dev/mapper/gentoo
+pvdisplay
+vgdisplay
+lvcreate -C y -L 16G gentoo -n swap
+lvcreate -l +100%FREE gentoo -n root
+
+mkswap /dev/mapper/gentoo-swap
+mkfs.ext4 /dev/mapper/gentoo-root
+mkfs.vfat -F 32 /dev/nvme0n1p1
+
+mkdir -p /mnt/gentoo
+mount /dev/mapper/gentoo-root /mnt/gentoo
+swapon /dev/mapper/gentoo-swap
+
 cd /mnt/gentoo
-wget <PASTED_STAGE_URL>
+wget https://distfiles.gentoo.org/releases/amd64/autobuilds/20230924T163139Z/stage3-amd64-openrc-20230924T163139Z.tar.xz
 tar xpvf stage3-*.tar.xz --xattrs-include='*.*' --numeric-owner
 
-#Configuring Portage
+mkdir --parents /mnt/gentoo/etc/portage/repos.conf
+cp /mnt/gentoo/usr/share/portage/config/repos.conf /mnt/gentoo/etc/portage/repos.conf/gentoo.conf
 
-#Chrooting
-mirrorselect -i -o >> /mnt/gentoo/etc/portage/make.conf
 cp --dereference /etc/resolv.conf /mnt/gentoo/etc/
 
 mount --types proc /proc /mnt/gentoo/proc
@@ -23,41 +40,9 @@ chroot /mnt/gentoo /bin/bash
 root #source /etc/profile
 root #export PS1="(chroot) ${PS1}"
 
-mkdir /efi
-mount /dev/sda1 /efi
-
 emerge-webrsync
 emerge --sync
 
-#Choosing the right profile
-eselect profile set 5
+eselect profile set 1
 
-#Updating the @world set
 emerge --update --deep --newuse @world
-
-#Configuring the Linux kernel
-emerge sys-kernel/linux-firmware
-emerge sys-kernel/gentoo-sources
-eselect kernel set 1
-emerge sys-kernel/genkernel
-genkernel all
-
-#Configuring the system
-echo tux > /etc/hostname
-
-emerge --ask app-admin/sysklogd
-rc-update add sysklogd default
-
-emerge --ask sys-process/cronie
-rc-update add cronie default
-
-emerge --ask sys-apps/mlocate
-
-emerge --ask net-misc/chrony
-rc-update add chronyd default
-
-emerge --ask net-misc/dhcpcd
-
-#Configuring the bootloader
-emerge sys-boot/grub
-
