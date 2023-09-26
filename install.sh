@@ -55,7 +55,9 @@ GENTOO_MIRRORS="https://mirror.aarnet.edu.au/pub/gentoo/"
 LC_MESSAGES=C.utf8cd 
 " > /etc/portage/make.conf
 
-#cpu flags
+echo "
+*/* CPU_FLAGS_X86: aes avx avx2 avx512f avx512dq avx512cd avx512bw avx512vl avx512vbmi f16c fma3 mmx mmxext pclmul popcnt rdrand sha sse sse2 sse3 sse4_1 sse4_2 ssse3
+" > /etc/portage/package.use/00cpu-flags
 
 eselect profile set 1
 
